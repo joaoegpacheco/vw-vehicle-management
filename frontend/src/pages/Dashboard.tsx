@@ -1,15 +1,24 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { Link, useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import "../styles/Dashboard.css";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [isRoot, setIsRoot] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
+      navigate("/");
+    }
+    try {
+      const decodedToken: { isRoot: boolean } = jwtDecode(String(token));
+      setIsRoot(decodedToken.isRoot);
+    } catch (error) {
+      console.error("Erro ao decodificar o token:", error);
       navigate("/");
     }
   }, [navigate]);
@@ -27,9 +36,11 @@ export default function Dashboard() {
           <Link to="/veiculos" className="nav-link">
             Gerenciar Veículos
           </Link>
-          <Link to="/registrar" className="nav-link">
-            Criar Usuários
-          </Link>
+          {isRoot && (
+            <Link to="/registrar" className="nav-link">
+              Criar Usuários
+            </Link>
+          )}
           <button className="logout-button" onClick={handleLogout}>
             Sair
           </button>
