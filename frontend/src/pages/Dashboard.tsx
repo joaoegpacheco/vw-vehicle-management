@@ -26,7 +26,7 @@ export default function Dashboard() {
   const handleLogout = () => {
     logout();
     navigate("/");
-  }
+  };
 
   return (
     <div className="dashboard-container">
@@ -37,9 +37,14 @@ export default function Dashboard() {
             Gerenciar Veículos
           </Link>
           {isRoot && (
-            <Link to="/registrar" className="nav-link">
-              Criar Usuários
-            </Link>
+            <>
+              <Link to="/registrar" className="nav-link">
+                Criar Usuários
+              </Link>
+              <Link to="/usuarios" className="nav-link">
+                Usuários
+              </Link>
+            </>
           )}
           <button className="logout-button" onClick={handleLogout}>
             Sair

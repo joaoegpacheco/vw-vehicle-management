@@ -23,6 +23,7 @@ export default function CreateUser() {
   });
 
   const [message, setMessage] = useState<string>("");
+  const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,6 +95,7 @@ export default function CreateUser() {
       </form>
 
       {message && <p>{message}</p>}
+      {token ? <button type="button" onClick={() => navigate('/dashboard')}>Voltar</button> : <button type="button" onClick={() => navigate('/')}>Voltar</button>}
     </div>
   );
 }
