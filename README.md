@@ -2,6 +2,8 @@
 
 ## Back-End
 
+> Open the backend project folder and install the dependencies, after installing the dependencies start the application.
+
 Install the necessary dependencies:
 
 ```
@@ -25,6 +27,8 @@ Menu -> Import
 Copy and past the following array of objects in the browser, `/backend/node-red-backend.json` to menu at node-red.
 
 ## Front-End
+
+> Open the frontend project folder and install the dependencies, after installing the dependencies start the application.
 
 Install the necessary dependencies:
 
