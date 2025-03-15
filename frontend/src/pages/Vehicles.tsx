@@ -24,15 +24,6 @@ interface VehicleResponse {
 
 export default function Vehicles() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [newVehicle, setNewVehicle] = useState<Vehicle>({
-    uuid: "",
-    creationUserName: "",
-    updatedUserName: "",
-    model: "",
-    color: "",
-    year: 0,
-    imagePath: "",
-  });
   const [message, setMessage] = useState<string>("");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
