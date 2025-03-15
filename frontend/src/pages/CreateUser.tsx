@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api/api";
+import "../styles/CreateUser.css";
 
 interface User {
   name: string;
@@ -11,6 +13,7 @@ interface User {
 interface ApiResponse {
   message: string;
 }
+
 export default function CreateUser() {
   const [userData, setUserData] = useState<User>({
     name: "",
@@ -20,6 +23,14 @@ export default function CreateUser() {
   });
 
   const [message, setMessage] = useState<string>("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/");
+    }
+  }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -34,13 +45,14 @@ export default function CreateUser() {
     try {
       const response = await API.post<ApiResponse>("/users", userData);
       setMessage(response.data.message);
+      navigate("/dashboard");
     } catch (error) {
       setMessage("Erro ao criar o usuário");
     }
   };
 
   return (
-    <div>
+    <div className="container">
       <h1>Criar Novo Usuário</h1>
       <form onSubmit={handleSubmit}>
         <div>
