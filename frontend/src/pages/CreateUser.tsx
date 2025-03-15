@@ -39,8 +39,8 @@ export default function CreateUser() {
       const response = await API.post<ApiResponse>("/users", userData);
       setMessage(response.data.message);
       navigate("/dashboard");
-    } catch (error) {
-      setMessage("Erro ao criar o usuário");
+    } catch (error: any) {
+      setMessage(error.response?.data?.error || "Erro ao criar o usuário");
     }
   };
 
