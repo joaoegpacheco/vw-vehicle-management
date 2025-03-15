@@ -12,7 +12,7 @@
         "type": "junction",
         "z": "b8b6a01e78378677",
         "x": 580,
-        "y": 440,
+        "y": 540,
         "wires": [
             []
         ]
@@ -25,7 +25,7 @@
         "url": "/login",
         "method": "post",
         "x": 90,
-        "y": 440,
+        "y": 540,
         "wires": [
             [
                 "process-login",
@@ -38,7 +38,7 @@
         "type": "function",
         "z": "b8b6a01e78378677",
         "name": "Process Login",
-        "func": "const jwt = global.get(\"jwt\");\nconst bcrypt = global.get(\"bcrypt\");\n\nif (!msg.payload || !msg.payload.name || !msg.payload.password) {\n    msg.payload = { error: \"Nome e senha são obrigatórios\" };\n    msg.statusCode = 400;\n    return msg;\n}\n\nconst { name, password } = msg.payload;\n\nconst users = flow.get(\"users\") || [];\n\nconst user = users.find(u => u.name === name);\nif (!user) {\n    msg.payload = { error: \"Usuário não encontrado\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\nconst isMatch = bcrypt.compareSync(password, user.password);\nif (!isMatch) {\n    msg.payload = { error: \"Senha incorreta\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\nconst token = jwt.sign(\n    { uuid: user.uuid, name: user.name, isRoot: user.isRoot }, \n    \"secreta\", \n    { expiresIn: \"1h\" }\n);\n\nmsg.payload = { token };\nmsg.statusCode = 200;\nreturn msg;",
+        "func": "const jwt = global.get(\"jwt\");\nconst bcrypt = global.get(\"bcrypt\");\n\nif (!msg.payload || !msg.payload.name || !msg.payload.password) {\n    msg.payload = { error: \"Nome e senha são obrigatórios\" };\n    msg.statusCode = 400;\n    return msg;\n}\n\nconst { name, password } = msg.payload;\n\n// Obtém a lista de usuários\nconst users = flow.get(\"users\") || [];\n\nif (!users.length) {\n    msg.payload = { error: \"Nenhum usuário cadastrado\" };\n    msg.statusCode = 500; // Erro interno do servidor\n    return msg;\n}\n\n// Procura o usuário pelo nome (ignorando maiúsculas/minúsculas)\nconst user = users.find(u => u.name.toLowerCase() === name.toLowerCase());\n\nif (!user) {\n    msg.payload = { error: \"Usuário não encontrado\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\n// Verifica se o usuário está ativo\nif (!user.isActived) {\n    msg.payload = { error: \"Usuário inativo. Entre em contato com o administrador.\" };\n    msg.statusCode = 403;\n    return msg;\n}\n\n// Compara a senha\nconst isMatch = bcrypt.compareSync(password, user.password);\nif (!isMatch) {\n    msg.payload = { error: \"Senha incorreta\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\n// Gera o token JWT\nconst token = jwt.sign(\n    { uuid: user.uuid, name: user.name, isRoot: user.isRoot }, \n    \"secreta\", \n    { expiresIn: \"1h\" }\n);\n\nmsg.payload = { token };\nmsg.statusCode = 200;\nreturn msg;\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -46,7 +46,7 @@
         "finalize": "",
         "libs": [],
         "x": 560,
-        "y": 440,
+        "y": 540,
         "wires": [
             [
                 "b9e3871408deb96f"
@@ -58,7 +58,7 @@
         "type": "function",
         "z": "b8b6a01e78378677",
         "name": "Verify Token",
-        "func": "const jwt = global.get(\"jwt\");\n\nif (!msg.headers || !msg.headers.Authorization) {\n    msg.payload = { error: \"Cabeçalho Authorization é obrigatório\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\nconst authHeader = msg.headers.Authorization;\nconst token = authHeader.split(\" \")[1];\n\nif (!token) {\n    msg.payload = { error: \"Token JWT não encontrado no cabeçalho Authorization\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\ntry {\n    const decoded = jwt.verify(token, \"secreta\");\n    msg.user = decoded; \n\n    return msg;\n} catch (err) {\n    msg.payload = { error: \"Token JWT inválido ou expirado\", detalhes: err.message };\n    msg.statusCode = 401;\n    return msg;\n}\n",
+        "func": "const jwt = global.get(\"jwt\");\n\nif (!msg.headers || !msg.headers.authorization) {\n    msg.payload = { error: \"Cabeçalho Authorization é obrigatório\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\nconst authHeader = msg.headers.authorization;\nconst token = authHeader.split(\" \")[1];\n\nif (!token) {\n    msg.payload = { error: \"Token JWT não encontrado no cabeçalho Authorization\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\ntry {\n    const decoded = jwt.verify(token, \"secreta\");\n    msg.user = decoded; \n\n    return msg;\n} catch (err) {\n    msg.payload = { error: \"Token JWT inválido ou expirado\", detalhes: err.message };\n    msg.statusCode = 401;\n    return msg;\n}\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -66,9 +66,11 @@
         "finalize": "",
         "libs": [],
         "x": 550,
-        "y": 540,
+        "y": 600,
         "wires": [
-            []
+            [
+                "145bb3aff2e9c113"
+            ]
         ]
     },
     {
@@ -78,8 +80,10 @@
         "name": "Create User",
         "url": "/users",
         "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
         "x": 110,
-        "y": 140,
+        "y": 120,
         "wires": [
             [
                 "process-create-user",
@@ -100,7 +104,7 @@
         "finalize": "",
         "libs": [],
         "x": 580,
-        "y": 140,
+        "y": 120,
         "wires": [
             [
                 "75a0d7be0e477f61"
@@ -115,7 +119,7 @@
         "url": "/vehicles",
         "method": "post",
         "x": 110,
-        "y": 200,
+        "y": 300,
         "wires": [
             [
                 "verify-token",
@@ -137,7 +141,7 @@
         "finalize": "",
         "libs": [],
         "x": 590,
-        "y": 200,
+        "y": 300,
         "wires": [
             [
                 "963f3c5977d9a986"
@@ -152,7 +156,7 @@
         "url": "/vehicles",
         "method": "get",
         "x": 110,
-        "y": 260,
+        "y": 360,
         "wires": [
             [
                 "verify-token",
@@ -166,7 +170,7 @@
         "type": "function",
         "z": "b8b6a01e78378677",
         "name": "Process Get Vehicles",
-        "func": "let vehicles = flow.get(\"vehicles\") || [];\n\nlet { page, limit, search, sortBy, order } = msg.req.query;\n\nif (search) {\n    const searchLower = search.toLowerCase();\n    vehicles = vehicles.filter(v =>\n        v.model.modeName.toLowerCase().includes(searchLower) ||\n        v.color.colorName.toLowerCase().includes(searchLower) ||\n        v.creationUserName.toLowerCase().includes(searchLower)\n    );\n}\n\nif (sortBy) {\n    const orderFactor = order === \"desc\" ? -1 : 1;\n    vehicles.sort((a, b) => (a[sortBy] > b[sortBy] ? orderFactor : -orderFactor));\n}\n\npage = parseInt(page) || 1;\nlimit = parseInt(limit) || 10;\nconst startIndex = (page - 1) * limit;\nconst endIndex = startIndex + limit;\nconst paginatedVehicles = vehicles.slice(startIndex, endIndex);\n\nmsg.payload = {\n    total: vehicles.length,\n    page,\n    limit,\n    vehicles: paginatedVehicles\n};\nmsg.statusCode = 200;\nreturn msg;\n",
+        "func": "let vehicles = flow.get(\"vehicles\") || [];\n\nlet { page, limit, search, sortBy, order } = msg.req.query;\n\nif (search) {\n    const searchLower = search.toLowerCase();\n    vehicles = vehicles.filter(v =>\n        v.model.toLowerCase().includes(searchLower) ||\n        v.color.toLowerCase().includes(searchLower) ||\n        v.creationUserName.toLowerCase().includes(searchLower)\n    );\n}\n\nif (sortBy) {\n    const orderFactor = order === \"desc\" ? -1 : 1;\n    vehicles.sort((a, b) => (a[sortBy] > b[sortBy] ? orderFactor : -orderFactor));\n}\n\npage = parseInt(page) || 1;\nlimit = parseInt(limit) || 10;\nconst startIndex = (page - 1) * limit;\nconst endIndex = startIndex + limit;\nconst paginatedVehicles = vehicles.slice(startIndex, endIndex);\n\nmsg.payload = {\n    total: vehicles.length,\n    page,\n    limit,\n    vehicles: paginatedVehicles\n};\nmsg.statusCode = 200;\nreturn msg;\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -174,7 +178,7 @@
         "finalize": "",
         "libs": [],
         "x": 580,
-        "y": 260,
+        "y": 360,
         "wires": [
             [
                 "63edb0e3a7aa9e33"
@@ -191,7 +195,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 110,
-        "y": 380,
+        "y": 480,
         "wires": [
             [
                 "verify-token",
@@ -213,7 +217,7 @@
         "finalize": "",
         "libs": [],
         "x": 580,
-        "y": 380,
+        "y": 480,
         "wires": [
             [
                 "fec6fd277f2c3efb"
@@ -233,11 +237,9 @@
         "finalize": "",
         "libs": [],
         "x": 550,
-        "y": 640,
+        "y": 700,
         "wires": [
-            [
-                "verify-token"
-            ]
+            []
         ]
     },
     {
@@ -250,7 +252,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 110,
-        "y": 320,
+        "y": 420,
         "wires": [
             [
                 "verify-token",
@@ -264,7 +266,7 @@
         "type": "function",
         "z": "b8b6a01e78378677",
         "name": "Process Update Vehicles",
-        "func": "if (!msg.payload || !msg.payload.uuid || !msg.payload.updatedUserName) {\n    node.error(\"Erro: Dados inválidos para atualização do veículo.\", msg);\n    return null;\n}\n\nlet updatedVehicle = {\n    uuid: msg.payload.uuid,\n    model: msg.payload.model || \"\",\n    color: msg.payload.color || \"\",\n    year: msg.payload.year || 0,\n    imagePath: msg.payload.imagePath || \"\",\n    updatedUserName: msg.payload.updatedUserName,\n    updatedAt: new Date().toISOString() \n};\n\nmsg.payload = updatedVehicle;\n\nreturn msg;\n",
+        "func": "if (!msg.payload || !msg.payload.updatedUserName) {\n    node.error(\"Erro: Dados inválidos para atualização do veículo.\", msg);\n    return null;\n}\n\nconst id = msg.req.params.id; \nconst storedVehicle = context.get(id) || {};  \nconst updatedVehicle = { \n    ...storedVehicle,\n    ...msg.payload,\n    uuid: id,\n    updatedAt: new Date().toISOString()\n};\n\ncontext.set(id, updatedVehicle); \nmsg.payload = updatedVehicle; \n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -272,7 +274,7 @@
         "finalize": "",
         "libs": [],
         "x": 590,
-        "y": 320,
+        "y": 420,
         "wires": [
             [
                 "663c099bbf5fe9e7"
@@ -287,7 +289,7 @@
         "statusCode": "",
         "headers": {},
         "x": 830,
-        "y": 140,
+        "y": 120,
         "wires": []
     },
     {
@@ -298,7 +300,7 @@
         "statusCode": "",
         "headers": {},
         "x": 830,
-        "y": 200,
+        "y": 300,
         "wires": []
     },
     {
@@ -309,7 +311,7 @@
         "statusCode": "",
         "headers": {},
         "x": 830,
-        "y": 260,
+        "y": 360,
         "wires": []
     },
     {
@@ -320,7 +322,7 @@
         "statusCode": "",
         "headers": {},
         "x": 830,
-        "y": 320,
+        "y": 420,
         "wires": []
     },
     {
@@ -331,7 +333,7 @@
         "statusCode": "",
         "headers": {},
         "x": 830,
-        "y": 380,
+        "y": 480,
         "wires": []
     },
     {
@@ -342,7 +344,7 @@
         "statusCode": "",
         "headers": {},
         "x": 830,
-        "y": 440,
+        "y": 540,
         "wires": []
     },
     {
@@ -415,6 +417,106 @@
         "headers": {},
         "x": 830,
         "y": 60,
+        "wires": []
+    },
+    {
+        "id": "c5ca9d2d63feab67",
+        "type": "http in",
+        "z": "b8b6a01e78378677",
+        "name": "Put Users",
+        "url": "/users/:id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 240,
+        "wires": [
+            [
+                "336be53773865c56",
+                "verify-token",
+                "145bb3aff2e9c113"
+            ]
+        ]
+    },
+    {
+        "id": "336be53773865c56",
+        "type": "function",
+        "z": "b8b6a01e78378677",
+        "name": "Process Update Users",
+        "func": "const userId = msg.req.params.id;\nlet users = flow.get(\"users\") || [];\n\nlet user = users.find(u => u.uuid === userId);\n\nif (!user) {\n    msg.payload = { error: \"Usuário não encontrado\" };\n    msg.statusCode = 404;\n    return msg;\n}\n\nconst updatedUser = { ...user, ...msg.payload };\n\nusers = users.map(u => u.uuid === userId ? updatedUser : u);\nflow.set(\"users\", users);\n\nmsg.payload = { message: \"Usuário atualizado com sucesso\", user: updatedUser };\nmsg.statusCode = 200;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 240,
+        "wires": [
+            [
+                "6153b9b6ab78c774"
+            ]
+        ]
+    },
+    {
+        "id": "6153b9b6ab78c774",
+        "type": "http response",
+        "z": "b8b6a01e78378677",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 830,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "78382aa79a770234",
+        "type": "http in",
+        "z": "b8b6a01e78378677",
+        "name": "Get Users",
+        "url": "/users",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 180,
+        "wires": [
+            [
+                "c44f69031119f72e",
+                "verify-token",
+                "145bb3aff2e9c113"
+            ]
+        ]
+    },
+    {
+        "id": "c44f69031119f72e",
+        "type": "function",
+        "z": "b8b6a01e78378677",
+        "name": "Process Get Users",
+        "func": "let users = flow.get(\"users\") || [];\nmsg.payload = { users: users };\nmsg.statusCode = 200;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 180,
+        "wires": [
+            [
+                "68ef1a8bcf20c7f7"
+            ]
+        ]
+    },
+    {
+        "id": "68ef1a8bcf20c7f7",
+        "type": "http response",
+        "z": "b8b6a01e78378677",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 830,
+        "y": 180,
         "wires": []
     }
 ]
