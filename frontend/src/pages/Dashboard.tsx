@@ -1,9 +1,23 @@
+import { useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/Dashboard.css";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/");
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  }
 
   return (
     <div className="dashboard-container">
@@ -16,7 +30,7 @@ export default function Dashboard() {
           <Link to="/registrar" className="nav-link">
             Criar Usuários
           </Link>
-          <button className="logout-button" onClick={logout}>
+          <button className="logout-button" onClick={handleLogout}>
             Sair
           </button>
         </nav>

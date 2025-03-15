@@ -4,6 +4,7 @@ import API from "../api/api";
 import CreateVehicleModal from "./CreateVehicleModal";
 import EditVehicleModal from "./EditVehicleModal";
 import "../styles/Vehicles.css";
+import { useNavigate } from "react-router-dom";
 
 interface Vehicle {
   uuid: string;
@@ -23,6 +24,7 @@ interface VehicleResponse {
 }
 
 export default function Vehicles() {
+  const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [message, setMessage] = useState<string>("");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -82,25 +84,30 @@ export default function Vehicles() {
     }
   };
 
-  useEffect(() => {
-    async function fetchVehicles() {
-      try {
-        const { data } = await API.get<VehicleResponse>("/vehicles", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        if (data && Array.isArray(data.vehicles)) {
-          setVehicles(data.vehicles);
-        } else {
-          console.error("Dados inválidos recebidos da API");
-        }
-      } catch (error) {
-        console.error("Erro ao carregar veículos:", error);
+  async function fetchVehicles() {
+    try {
+      const { data } = await API.get<VehicleResponse>("/vehicles", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (data && Array.isArray(data.vehicles)) {
+        setVehicles(data.vehicles);
+      } else {
+        console.error("Dados inválidos recebidos da API");
       }
+    } catch (error) {
+      console.error("Erro ao carregar veículos:", error);
+    }
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/");
     }
     fetchVehicles();
-  }, []);
+  }, [navigate]);
 
   const handleSaveNewVehicle = async (newVehicle: Vehicle) => {
     const userName = getUserFromToken().name;
@@ -113,8 +120,6 @@ export default function Vehicles() {
       newVehicle.uuid = uuid;
     }
 
-    console.log(newVehicle);
-
     try {
       const response = await API.post("/vehicles", newVehicle, {
         headers: {
@@ -124,6 +129,7 @@ export default function Vehicles() {
       const newVehicleData = response.data as Vehicle;
       setMessage("Veículo cadastrado com sucesso!");
       setVehicles([...vehicles, newVehicleData]);
+      fetchVehicles()
       setShowCreateModal(false);
     } catch (error) {
       setMessage("Erro ao cadastrar veículo");
