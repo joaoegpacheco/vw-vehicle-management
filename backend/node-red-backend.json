@@ -12,7 +12,7 @@
         "type": "junction",
         "z": "b8b6a01e78378677",
         "x": 580,
-        "y": 500,
+        "y": 440,
         "wires": [
             []
         ]
@@ -25,7 +25,7 @@
         "url": "/login",
         "method": "post",
         "x": 90,
-        "y": 500,
+        "y": 440,
         "wires": [
             [
                 "process-login",
@@ -46,7 +46,7 @@
         "finalize": "",
         "libs": [],
         "x": 560,
-        "y": 500,
+        "y": 440,
         "wires": [
             [
                 "b9e3871408deb96f"
@@ -58,7 +58,7 @@
         "type": "function",
         "z": "b8b6a01e78378677",
         "name": "Verify Token",
-        "func": "const jwt = global.get(\"jwt\");\nconst authHeader = msg.headers && msg.headers.Authorization;\n\nif (!authHeader) {\n    msg.payload = { error: \"Cabeçalho Authorization é obrigatório\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\nconst token = authHeader.split(' ')[1];\nif (!token) {\n    msg.payload = { error: \"Token JWT não encontrado no cabeçalho Authorization\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\ntry {\n    const decoded = jwt.verify(token, \"secreta\");\n    msg.user = decoded;\n    msg.log = `[${new Date().toISOString()}] [${msg.user.username}] [${msg.req.route}] : {\"token\":\"${token}\"}`;\n} catch (err) {\n    msg.payload = { error: \"Token JWT inválido ou expirado\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\nreturn msg;\n",
+        "func": "const jwt = global.get(\"jwt\");\n\nif (!msg.headers || !msg.headers.Authorization) {\n    msg.payload = { error: \"Cabeçalho Authorization é obrigatório\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\nconst authHeader = msg.headers.Authorization;\nconst token = authHeader.split(\" \")[1];\n\nif (!token) {\n    msg.payload = { error: \"Token JWT não encontrado no cabeçalho Authorization\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\ntry {\n    const decoded = jwt.verify(token, \"secreta\");\n    msg.user = decoded; \n\n    return msg;\n} catch (err) {\n    msg.payload = { error: \"Token JWT inválido ou expirado\", detalhes: err.message };\n    msg.statusCode = 401;\n    return msg;\n}\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -66,7 +66,7 @@
         "finalize": "",
         "libs": [],
         "x": 550,
-        "y": 600,
+        "y": 540,
         "wires": [
             []
         ]
@@ -221,48 +221,11 @@
         ]
     },
     {
-        "id": "upload-image",
-        "type": "http in",
-        "z": "b8b6a01e78378677",
-        "name": "Upload Image",
-        "url": "/upload",
-        "method": "post",
-        "x": 110,
-        "y": 440,
-        "wires": [
-            [
-                "verify-token",
-                "process-upload-image",
-                "145bb3aff2e9c113"
-            ]
-        ]
-    },
-    {
-        "id": "process-upload-image",
-        "type": "function",
-        "z": "b8b6a01e78378677",
-        "name": "Process Upload Image",
-        "func": "if (!msg.payload || !msg.payload.filename || !msg.payload.data) {\n    msg.payload = { error: \"Imagem não recebida ou inválida\" };\n    msg.statusCode = 400;\n    return msg;\n}\n\nconst { filename, data } = msg.payload;\n\nconst uploadDir = '/path/to/upload/directory'; \n\nconst fs = require('fs');\nconst path = require('path');\nconst filePath = path.join(uploadDir, filename);\n\nif (!fs.existsSync(uploadDir)) {\n    fs.mkdirSync(uploadDir, { recursive: true });\n}\n\nfs.writeFile(filePath, data, (err) => {\n    if (err) {\n        msg.payload = { error: 'Erro ao salvar a imagem' };\n        msg.statusCode = 500;\n    } else {\n        msg.payload = { \n            message: 'Imagem salva com sucesso',\n            filePath: filePath \n        };\n        msg.statusCode = 200;\n    }\n});\n\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 580,
-        "y": 440,
-        "wires": [
-            [
-                "fa26156e0bb7bd54"
-            ]
-        ]
-    },
-    {
         "id": "145bb3aff2e9c113",
         "type": "function",
         "z": "b8b6a01e78378677",
         "name": "Log Action",
-        "func": "const { user, req } = msg;\nconst actionPayload = JSON.stringify(req.payload);\nmsg.log = `[${new Date().toISOString()}] [${user.username}] [${req.route}] : ${actionPayload}`;\nnode.warn(msg.log);\nreturn msg;\n",
+        "func": "const { user, req } = msg;\n\nif (!user || !user.name) {\n    msg.payload = { error: \"Usuário não identificado. Verifique a autenticação.\" };\n    msg.statusCode = 401;\n    return msg;\n}\n\nconst route = req && req.route ? req.route : \"Rota desconhecida\";\n\nmsg.log = `[${new Date().toISOString()}] [Usuário: ${user.name}] [${route}]`;\nnode.warn(msg.log);\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -270,9 +233,11 @@
         "finalize": "",
         "libs": [],
         "x": 550,
-        "y": 700,
+        "y": 640,
         "wires": [
-            []
+            [
+                "verify-token"
+            ]
         ]
     },
     {
@@ -299,7 +264,7 @@
         "type": "function",
         "z": "b8b6a01e78378677",
         "name": "Process Update Vehicles",
-        "func": "const vehicleId = msg.params.id;\nconst updatedData = msg.payload;\n\nconst vehiclesDatabase = global.get('vehiclesDatabase') || [];\n\nlet vehicle = vehiclesDatabase.find(v => v.id === vehicleId);\nif (!vehicle) {\n    msg.payload = { error: `Veículo com ID ${vehicleId} não encontrado.` };\n    msg.statusCode = 404;\n    return msg;\n}\n\nvehicle = { ...vehicle, ...updatedData };\n\nconst index = vehiclesDatabase.findIndex(v => v.id === vehicleId);\nvehiclesDatabase[index] = vehicle;\n\nglobal.set('vehiclesDatabase', vehiclesDatabase);\n\nmsg.payload = { success: \"Veículo atualizado com sucesso\", vehicle };\nmsg.statusCode = 200;\n\nmsg.log = `[${new Date().toISOString()}] [${msg.user.username}] [${msg.req.route}] : ${JSON.stringify(updatedData)}`;\n\nreturn msg;\n",
+        "func": "if (!msg.payload || !msg.payload.uuid || !msg.payload.updatedUserName) {\n    node.error(\"Erro: Dados inválidos para atualização do veículo.\", msg);\n    return null;\n}\n\nlet updatedVehicle = {\n    uuid: msg.payload.uuid,\n    model: msg.payload.model || \"\",\n    color: msg.payload.color || \"\",\n    year: msg.payload.year || 0,\n    imagePath: msg.payload.imagePath || \"\",\n    updatedUserName: msg.payload.updatedUserName,\n    updatedAt: new Date().toISOString() \n};\n\nmsg.payload = updatedVehicle;\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -370,17 +335,6 @@
         "wires": []
     },
     {
-        "id": "fa26156e0bb7bd54",
-        "type": "http response",
-        "z": "b8b6a01e78378677",
-        "name": "",
-        "statusCode": "",
-        "headers": {},
-        "x": 830,
-        "y": 440,
-        "wires": []
-    },
-    {
         "id": "b9e3871408deb96f",
         "type": "http response",
         "z": "b8b6a01e78378677",
@@ -388,7 +342,7 @@
         "statusCode": "",
         "headers": {},
         "x": 830,
-        "y": 500,
+        "y": 440,
         "wires": []
     },
     {
@@ -407,7 +361,7 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 110,
+        "x": 90,
         "y": 60,
         "wires": [
             [
@@ -420,7 +374,7 @@
         "type": "function",
         "z": "b8b6a01e78378677",
         "name": "Store Colors and Templates",
-        "func": "const colors = [\n    { uuid: '1', colorName: 'Preto' },\n    { uuid: '2', colorName: 'Branco' },\n    { uuid: '3', colorName: 'Vermelho' },\n    { uuid: '4', colorName: 'Cinza' },\n    { uuid: '5', colorName: 'Azul' }\n];\n\nconst models = [\n    { uuid: '1', modelName: 'T-Cross' },\n    { uuid: '2', modelName: 'Nivus' },\n    { uuid: '3', modelName: 'Polo' },\n    { uuid: '4', modelName: 'Virtus' },\n    { uuid: '5', modelName: 'Saveiro' },\n    { uuid: '6', modelName: 'Track' }\n];\n\nglobal.set('colors', colors);\nglobal.set('models', models);\n\nmsg.payload = { success: true, message: \"Cores e Modelos armazenados com sucesso!\" };\nreturn msg;\n",
+        "func": "const colorsGlobal = [\n    { uuid: '1', colorName: 'Preto' },\n    { uuid: '2', colorName: 'Branco' },\n    { uuid: '3', colorName: 'Vermelho' },\n    { uuid: '4', colorName: 'Cinza' },\n    { uuid: '5', colorName: 'Azul' }\n];\n\nconst modelsGlobal = [\n    { uuid: '1', modelName: 'T-Cross' },\n    { uuid: '2', modelName: 'Nivus' },\n    { uuid: '3', modelName: 'Polo' },\n    { uuid: '4', modelName: 'Virtus' },\n    { uuid: '5', modelName: 'Saveiro' },\n    { uuid: '6', modelName: 'Track' }\n];\n\nglobal.set('colors', colorsGlobal);\nglobal.set('models', modelsGlobal);\n\nmsg.payload = { colors: colorsGlobal, models: modelsGlobal };\nmsg.statusCode = 200;\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -430,7 +384,37 @@
         "x": 600,
         "y": 60,
         "wires": [
-            []
+            [
+                "6134d03c3755e56c"
+            ]
         ]
+    },
+    {
+        "id": "01e668fe94d3ba5d",
+        "type": "http in",
+        "z": "b8b6a01e78378677",
+        "name": "Get Colors and Models",
+        "url": "/colors-and-models",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 20,
+        "wires": [
+            [
+                "ba3a7a8790be6ec7"
+            ]
+        ]
+    },
+    {
+        "id": "6134d03c3755e56c",
+        "type": "http response",
+        "z": "b8b6a01e78378677",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 830,
+        "y": 60,
+        "wires": []
     }
 ]
