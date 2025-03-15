@@ -11,10 +11,12 @@
   }
   
   .modal-content {
+    display: flex;
+    flex-direction: column;
     background-color: #fff;
     padding: 20px;
     border-radius: 5px;
-    width: 400px;
+    max-width: 440px;
   }
   
   .modal-content input {
