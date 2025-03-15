@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(name: string, password: string) {
     const response = await API.post<LoginResponse>("/login", { name, password });
-    const data = response.data; // Agora TypeScript sabe que 'data' tem um 'token'
+    const data = response.data; 
     localStorage.setItem("token", data.token);
     const decoded: any = jwtDecode(data.token);
     setUser({ name: decoded.name, isRoot: decoded.isRoot });

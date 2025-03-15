@@ -1,0 +1,15 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Backend com Node-RED e dependências para autenticação",
+  "scripts": {
+    "start": "node-red -s settings.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "crypto": "latest",
+    "jsonwebtoken": "^8.5.1",
+    "node-red": "^3.0.0"
+  },
+  "devDependencies": {}
+}

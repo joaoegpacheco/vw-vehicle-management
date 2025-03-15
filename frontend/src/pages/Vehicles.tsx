@@ -17,7 +17,7 @@ export default function Vehicles() {
   useEffect(() => {
     async function fetchVehicles() {
       const { data } = await API.get("/vehicles");
-      setVehicles(data as Vehicle[]); // Afirmação de tipo
+      setVehicles(data as Vehicle[]);
     }
     fetchVehicles();
   }, []);

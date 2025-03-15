@@ -8,7 +8,7 @@ export default function Dashboard() {
     <div>
       <h1>Bem-vindo, {user?.name}!</h1>
       <nav>
-        <Link to="/vehicles">Gerenciar Veículos</Link>
+        <Link to="/veiculos">Gerenciar Veículos</Link>
         <button onClick={logout}>Sair</button>
       </nav>
     </div>
