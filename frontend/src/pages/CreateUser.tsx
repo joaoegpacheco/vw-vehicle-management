@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 import "../styles/CreateUser.css";
@@ -24,13 +24,6 @@ export default function CreateUser() {
 
   const [message, setMessage] = useState<string>("");
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/");
-    }
-  }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
