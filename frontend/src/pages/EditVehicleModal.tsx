@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "../styles/Modal.css";
+import API from "../api/api";
 
 interface Vehicle {
   uuid: string;
@@ -9,6 +10,21 @@ interface Vehicle {
   color: string;
   year: number;
   imagePath: string;
+}
+
+interface Color {
+  uuid: string;
+  colorName: string;
+}
+
+interface Model {
+  uuid: string;
+  modelName: string;
+}
+
+interface ApiResponse {
+  colors: Color[];
+  models: Model[];
 }
 
 interface EditVehicleModalProps {
@@ -23,9 +39,31 @@ const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
   onSave,
 }) => {
   const [updatedVehicle, setUpdatedVehicle] = useState<Vehicle | null>(vehicle);
+  const [globalColors, setColors] = useState<Color[]>([]);
+    const [globalModels, setModels] = useState<Model[]>([]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    useEffect(() => {
+      API.get<ApiResponse>("/colors-and-models", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+        .then((response) => {
+          const { colors, models } = response.data;
+          if (colors && Array.isArray(colors)) {
+            setColors(colors);
+          }
+          if (models && Array.isArray(models)) {
+            setModels(models);
+          }
+        })
+        .catch((error) => {
+          console.error("Erro ao buscar cores e modelos:", error);
+        });
+    }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLElement>) => {
+    const { name, value } = e.target as HTMLInputElement | HTMLSelectElement;
     if (updatedVehicle) {
       setUpdatedVehicle({
         ...updatedVehicle,
@@ -47,24 +85,25 @@ const EditVehicleModal: React.FC<EditVehicleModalProps> = ({
     <div className="modal">
       <div className="modal-content">
         <h2>Editar Veículo</h2>
-        <label>
-          Modelo:
-          <input
-            type="text"
-            name="model"
-            value={updatedVehicle?.model}
-            onChange={handleInputChange}
-          />
-        </label>
-        <label>
-          Cor:
-          <input
-            type="text"
-            name="color"
-            value={updatedVehicle?.color}
-            onChange={handleInputChange}
-          />
-        </label>
+        <label htmlFor="color">Cor:</label>
+          <select id="color" name="color" className="select-input" onChange={handleInputChange}>
+          <option value=""></option> 
+            {globalColors.map((color) => (
+              <option key={color.uuid} value={color.colorName}>
+                {color.colorName}
+              </option>
+            ))}
+          </select>
+
+          <label htmlFor="model">Modelo:</label>
+          <select id="model" name="model" className="select-input" onChange={handleInputChange}>
+          <option value=""></option> 
+            {globalModels.map((model) => (
+              <option key={model.uuid} value={model.modelName}>
+                {model.modelName}
+              </option>
+            ))}
+          </select>
         <label>
           Ano:
           <input
